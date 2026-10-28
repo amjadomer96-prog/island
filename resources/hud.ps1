@@ -60,7 +60,8 @@ $pending = $stdin.ReadLineAsync()
 $last = @{}
 $tick = 0
 while ($true) {
-  if ($pending.IsCompleted) {
+  # Handle every command that is waiting, not just one, so a dragged slider never lags behind.
+  while ($pending.IsCompleted) {
     if ($null -eq $pending.Result) { exit 0 }
     $parts = $pending.Result.Trim().Split(' ')
     $inv = [Globalization.CultureInfo]::InvariantCulture

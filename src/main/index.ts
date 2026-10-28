@@ -99,12 +99,16 @@ function openSettings() {
 /** Where the notch is, in window pixels; the window catches the pointer only there. */
 let notch = { x: 0, y: 0, width: 0, height: 0 };
 let catching = false;
+// A slider drag keeps the notch open. The UI renews the hold as the pointer moves, so a hold
+// that is never released (a lost pointer-up) runs out on its own.
+let holdUntil = 0;
 function watchPointer() {
   setInterval(() => {
     if (!win) return;
     const p = screen.getCursorScreenPoint();
     const b = win.getBounds();
     const pad = 4;
+    if (Date.now() < holdUntil) return;
     const inside = p.x >= b.x + notch.x - pad && p.x <= b.x + notch.x + notch.width + pad && p.y >= b.y + notch.y - pad && p.y <= b.y + notch.y + notch.height + pad;
     if (inside !== catching) {
       catching = inside;
@@ -179,6 +183,7 @@ app.whenReady().then(() => {
   ipcMain.on("bounds", (_e, r: typeof notch) => {
     if ([r?.x, r?.y, r?.width, r?.height].every(Number.isFinite)) notch = r;
   });
+  ipcMain.on("hold", (_e, on: boolean) => { holdUntil = on ? Date.now() + 1500 : 0; });
   ipcMain.on("shelf-add", (_e, paths: string[]) => { if (Array.isArray(paths)) shelf?.add(paths.filter((p) => typeof p === "string")); });
   ipcMain.on("shelf-remove", (_e, path: string) => shelf?.remove(path));
   ipcMain.on("shelf-open", (_e, path: string) => shelf?.open(path));

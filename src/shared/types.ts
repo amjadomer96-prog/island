@@ -90,6 +90,8 @@ export interface IslandApi {
   saveSettings(patch: Partial<Settings>): Promise<Settings>;
   /** Where the island is, in window pixels, so the window only catches the pointer there. */
   setBounds(rect: { x: number; y: number; width: number; height: number }): void;
+  /** Keep the notch open and catching the pointer, e.g. while a slider is dragged past its edge. */
+  hold(on: boolean): void;
   media(command: MediaCommand): void;
   system(command: SystemCommand): void;
   connectClaude(): Promise<{ ok: boolean; error?: string }>;

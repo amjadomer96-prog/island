@@ -30,6 +30,7 @@ const api: IslandApi = {
   openSettings: () => ipcRenderer.send("open-settings"),
   saveSettings: (patch) => ipcRenderer.invoke("save-settings", patch),
   setBounds: (rect) => ipcRenderer.send("bounds", rect),
+  hold: (on) => ipcRenderer.send("hold", !!on),
   connectClaude: () => ipcRenderer.invoke("connect-claude"),
   quit: () => ipcRenderer.send("quit"),
   state: () => ipcRenderer.invoke("state"),

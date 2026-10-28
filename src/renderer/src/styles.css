@@ -157,12 +157,15 @@ img { display: block; }
 
 /* ---------- Sliders (Control Center) ---------- */
 .sliders { display: flex; gap: 12px; }
-.slider { flex: 1; display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 12px 0 6px; border-radius: 12px; background: var(--raised); }
-.slider__icon { width: 26px; height: 26px; display: grid; place-items: center; color: var(--text-2); border-radius: 8px; flex: none; }
-button.slider__icon:hover { color: var(--text); background: rgba(255, 255, 255, 0.06); }
-.slider input { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px; cursor: pointer;
-  background: linear-gradient(90deg, var(--text) 0 var(--fill), rgba(255, 255, 255, 0.2) var(--fill) 100%); }
-.slider input::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); }
+/* Control Center fill slider: the white fill follows the pointer exactly while dragging and
+   eases into place otherwise (a tap, a key press, or the system catching up). */
+.fill-slider { position: relative; flex: 1; height: 32px; border-radius: 16px; background: rgba(255, 255, 255, 0.12); overflow: hidden; cursor: pointer; touch-action: none; transition: background-color 0.2s; }
+.fill-slider:hover { background: rgba(255, 255, 255, 0.15); }
+.fill-slider:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
+.fill-slider__fill { position: absolute; inset: 0; background: var(--text); transform-origin: left; transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1); will-change: transform; }
+.fill-slider--drag .fill-slider__fill { transition: none; }
+.fill-slider__icon { position: absolute; left: 11px; top: 50%; translate: 0 -50%; display: grid; color: var(--text-2); transition: color 0.15s; pointer-events: none; }
+.fill-slider__icon--dark { color: #1c1c1e; }
 
 /* ---------- Calendar ---------- */
 .next-event, .event { display: flex; align-items: stretch; gap: 10px; text-align: left; padding: 8px 10px; border-radius: 12px; background: var(--raised); }

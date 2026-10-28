@@ -32,12 +32,30 @@ export function startHud(handlers: { onChange: (s: HudState) => void; onFlash: (
     handlers.onChange(state);
   });
 
+  // A dragged slider sends a value every frame; Windows only needs the latest. Each kind is
+  // coalesced and sent at a steady pace (brightness goes through slower WMI calls).
+  const pending: Partial<Record<"volume" | "brightness", string>> = {};
+  const timers: Partial<Record<"volume" | "brightness", NodeJS.Timeout>> = {};
+  const PACE = { volume: 40, brightness: 120 };
+  const queue = (kind: "volume" | "brightness", line: string) => {
+    pending[kind] = line;
+    if (timers[kind]) return;
+    const flush = () => {
+      const next = pending[kind];
+      if (!next) { timers[kind] = undefined; return; }
+      pending[kind] = undefined;
+      helper.send(next);
+      timers[kind] = setTimeout(flush, PACE[kind]);
+    };
+    flush();
+  };
+
   return {
     get: () => state,
     command(cmd: HudCommand) {
-      if (cmd.kind === "volume" && Number.isFinite(cmd.level)) helper.send(`volume ${Math.max(0, Math.min(1, cmd.level)).toFixed(3)}`);
+      if (cmd.kind === "volume" && Number.isFinite(cmd.level)) queue("volume", `volume ${Math.max(0, Math.min(1, cmd.level)).toFixed(3)}`);
       else if (cmd.kind === "mute") helper.send(`mute ${cmd.muted ? 1 : 0}`);
-      else if (cmd.kind === "brightness" && Number.isFinite(cmd.level)) helper.send(`brightness ${Math.round(Math.max(0, Math.min(100, cmd.level)))}`);
+      else if (cmd.kind === "brightness" && Number.isFinite(cmd.level)) queue("brightness", `brightness ${Math.round(Math.max(0, Math.min(100, cmd.level)))}`);
     },
     stop: helper.stop,
   };

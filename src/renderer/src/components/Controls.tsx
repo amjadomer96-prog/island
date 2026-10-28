@@ -1,32 +1,116 @@
-import type { CSSProperties } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import type { HudState } from "../../../shared/types";
 import { Speaker, Sun } from "./icons";
 
 const api = window.island;
 
-/** Volume and (on laptops) brightness sliders, like Control Center. */
+/** Volume and (on laptops) brightness, as Control Center-style fill sliders. */
 export function Controls({ hud }: { hud: HudState }) {
   const vol = hud.volume;
   return (
     <div className="sliders">
       {vol && (
-        <div className="slider">
-          <button type="button" className="slider__icon" aria-label={vol.muted ? "Unmute" : "Mute"} onClick={() => api.hud({ kind: "mute", muted: !vol.muted })}>
-            <Speaker muted={vol.muted} level={vol.level} />
-          </button>
-          <input type="range" min={0} max={100} value={Math.round(vol.level * 100)} aria-label="Volume"
-            style={{ "--fill": `${vol.muted ? 0 : vol.level * 100}%` } as CSSProperties}
-            onChange={(e) => api.hud({ kind: "volume", level: Number(e.target.value) / 100 })} />
-        </div>
+        <Slider
+          label="Volume"
+          value={vol.muted ? 0 : vol.level}
+          onChange={(v) => api.hud({ kind: "volume", level: v })}
+          icon={<Speaker size={16} muted={vol.muted} level={vol.level} />}
+          onIconTap={() => api.hud({ kind: "mute", muted: !vol.muted })}
+          iconLabel={vol.muted ? "Unmute" : "Mute"}
+        />
       )}
       {hud.brightness !== null && (
-        <div className="slider">
-          <span className="slider__icon"><Sun /></span>
-          <input type="range" min={0} max={100} value={hud.brightness} aria-label="Brightness"
-            style={{ "--fill": `${hud.brightness}%` } as CSSProperties}
-            onChange={(e) => api.hud({ kind: "brightness", level: Number(e.target.value) })} />
-        </div>
+        <Slider label="Brightness" value={hud.brightness / 100} onChange={(v) => api.hud({ kind: "brightness", level: v * 100 })} icon={<Sun size={16} />} />
       )}
+    </div>
+  );
+}
+
+const ICON_ZONE = 36; // px at the left of the bar where a tap toggles mute instead of setting the level
+
+/**
+ * A thick fill slider that follows the pointer exactly. While you drag (and briefly after), it
+ * shows your value rather than the system's, which reports back a little later.
+ */
+function Slider({ label, value, onChange, icon, onIconTap, iconLabel }: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  icon: ReactNode;
+  onIconTap?: () => void;
+  iconLabel?: string;
+}) {
+  const track = useRef<HTMLDivElement>(null);
+  const [local, setLocal] = useState<number | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const start = useRef<{ x: number; inIcon: boolean; moved: boolean } | null>(null);
+  const settle = useRef<number | undefined>(undefined);
+  useEffect(() => () => { window.clearTimeout(settle.current); api.hold(false); }, []);
+
+  const shown = local ?? value;
+  const at = (clientX: number) => {
+    const r = track.current!.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+  };
+  const set = (v: number) => { setLocal(v); onChange(v); };
+  // After you let go, hold your value until the system has caught up, then follow it again.
+  const release = () => { window.clearTimeout(settle.current); settle.current = window.setTimeout(() => setLocal(null), 700); };
+
+  const down = (e: PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const inIcon = !!onIconTap && e.clientX - track.current!.getBoundingClientRect().left < ICON_ZONE;
+    start.current = { x: e.clientX, inIcon, moved: false };
+    window.clearTimeout(settle.current);
+    setDragging(true);
+    api.hold(true);
+    if (!inIcon) set(at(e.clientX)); // tap anywhere else jumps there, like Control Center
+  };
+  const move = (e: PointerEvent<HTMLDivElement>) => {
+    const s = start.current;
+    if (!s) return;
+    if (!s.moved && Math.abs(e.clientX - s.x) < 3) return;
+    s.moved = true;
+    api.hold(true); // renew: the notch stays open while the drag continues
+    set(at(e.clientX));
+  };
+  const up = () => {
+    const s = start.current;
+    start.current = null;
+    setDragging(false);
+    api.hold(false);
+    if (s?.inIcon && !s.moved) onIconTap?.();
+    release();
+  };
+  const key = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key.toLowerCase() === "m" && onIconTap) { onIconTap(); return; }
+    const step = e.key === "ArrowRight" || e.key === "ArrowUp" ? 0.05 : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -0.05 : 0;
+    if (!step) return;
+    e.preventDefault();
+    set(Math.max(0, Math.min(1, shown + step)));
+    release();
+  };
+
+  // The icon sits over the fill once the fill reaches it, so it turns dark there, as on the Mac.
+  const dark = shown > 0.13;
+  return (
+    <div
+      ref={track}
+      className={`fill-slider${dragging ? " fill-slider--drag" : ""}`}
+      role="slider"
+      tabIndex={0}
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(shown * 100)}
+      onPointerDown={down}
+      onPointerMove={move}
+      onPointerUp={up}
+      onPointerCancel={up}
+      onLostPointerCapture={() => { if (start.current) up(); }}
+      onKeyDown={key}
+    >
+      <span className="fill-slider__fill" style={{ transform: `scaleX(${shown})` }} />
+      <span className={`fill-slider__icon${dark ? " fill-slider__icon--dark" : ""}`} title={iconLabel} aria-hidden>{icon}</span>
     </div>
   );
 }
