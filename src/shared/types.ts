@@ -74,11 +74,65 @@ export interface IslandApi {
   onNotice(cb: (notice: Notice) => void): () => void;
   /** An app that was just opened, to show briefly in the island. */
   onOpened(cb: (app: OpenApp) => void): () => void;
+  onHud(cb: (state: HudState) => void): () => void;
+  onFlash(cb: (flash: HudFlash) => void): () => void;
+  onShelf(cb: (files: ShelfFile[]) => void): () => void;
+  onCalendar(cb: (events: CalendarEvent[]) => void): () => void;
+  onSettings(cb: (settings: Settings) => void): () => void;
+  /** The pointer entered (true) or left (false) the notch. */
+  onPointer(cb: (inside: boolean) => void): () => void;
+  hud(command: HudCommand): void;
+  shelfAdd(files: File[]): void;
+  shelfRemove(path: string): void;
+  shelfOpen(path: string): void;
+  shelfDrag(path: string): void;
+  openSettings(): void;
+  saveSettings(patch: Partial<Settings>): Promise<Settings>;
+  /** Where the island is, in window pixels, so the window only catches the pointer there. */
+  setBounds(rect: { x: number; y: number; width: number; height: number }): void;
   media(command: MediaCommand): void;
   system(command: SystemCommand): void;
-  setInteractive(on: boolean): void;
   connectClaude(): Promise<{ ok: boolean; error?: string }>;
   quit(): void;
   /** The latest state, for when the UI starts after the first updates went out. */
-  state(): Promise<{ media: MediaState | null; claude: ClaudeState | null; system: SystemState | null }>;
+  state(): Promise<{ media: MediaState | null; claude: ClaudeState | null; system: SystemState | null; hud: HudState; shelf: ShelfFile[]; calendar: CalendarEvent[]; settings: Settings }>;
+}
+
+/** Volume, brightness and battery, for the notch's HUD. Brightness is null on screens that don't report it. */
+export interface HudState {
+  volume: { level: number; muted: boolean } | null;
+  brightness: number | null;
+  battery: { present: boolean; percent: number; charging: boolean } | null;
+}
+/** Something the notch should flash: a level that just changed, the charger going in, a low battery. */
+export type HudFlash = "volume" | "brightness" | "charging" | "low-battery";
+export type HudCommand = { kind: "volume"; level: number } | { kind: "mute"; muted: boolean } | { kind: "brightness"; level: number };
+
+/** A file dropped on the notch, kept on its shelf until removed. */
+export interface ShelfFile {
+  path: string;
+  name: string;
+  size: number;
+  icon?: string | null;
+  added: number;
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: number;
+  end: number;
+  allDay: boolean;
+  location?: string;
+}
+
+export interface Settings {
+  notifications: boolean;
+  openedApps: boolean;
+  hud: boolean;
+  battery: boolean;
+  launchAtLogin: boolean;
+  /** A private calendar address (.ics) from Google Calendar, Outlook or iCloud. */
+  calendarUrl: string;
+  timerSound: boolean;
 }

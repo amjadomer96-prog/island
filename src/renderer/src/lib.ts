@@ -89,3 +89,20 @@ export function ago(at: number) {
   if (s < 86400) return `${Math.floor(s / 3600)}h`;
   return `${Math.floor(s / 86400)}d`;
 }
+
+/** Timer display: "4:05", or "1:02:05" past an hour. */
+export function clock(ms: number) {
+  const s = Math.ceil(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+  return h ? `${h}:${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}` : `${m}:${String(r).padStart(2, "0")}`;
+}
+
+/** "10:00 – 10:30", with "Tomorrow" or the weekday when it isn't today. */
+export function eventTime(e: { start: number; end: number; allDay: boolean }) {
+  const d = new Date(e.start), today = new Date();
+  const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
+  const day = d.toDateString() === today.toDateString() ? "" : d.toDateString() === tomorrow.toDateString() ? "Tomorrow " : d.toLocaleDateString(undefined, { weekday: "short" }) + " ";
+  if (e.allDay) return `${day || "Today "}· all day`;
+  const t = (n: number) => new Date(n).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `${day}${t(e.start)} – ${t(e.end)}`;
+}

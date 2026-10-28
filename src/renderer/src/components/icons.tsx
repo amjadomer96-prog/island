@@ -37,3 +37,42 @@ export const Grid = ({ size = 16 }: P) => (
 export const Bell = ({ size = 16 }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 2.5a6.5 6.5 0 0 0-6.5 6.5v3.6l-1.7 3a1 1 0 0 0 .9 1.4h14.6a1 1 0 0 0 .9-1.4l-1.7-3V9A6.5 6.5 0 0 0 12 2.5Zm-2.8 16.5a2.9 2.9 0 0 0 5.6 0Z" /></svg>
 );
+export const Speaker = ({ size = 16, muted = false, level = 1 }: P & { muted?: boolean; level?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M4 9.2h3.3L12 5.1c.7-.6 1.7-.1 1.7.8v12.2c0 .9-1 1.4-1.7.8l-4.7-4.1H4a1 1 0 0 1-1-1V10.2a1 1 0 0 1 1-1Z" />
+    {muted ? (
+      <path d="m16.5 9.5 5 5m0-5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    ) : (
+      <g stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none">
+        {level > 0.02 && <path d="M16.3 9.3a4 4 0 0 1 0 5.4" />}
+        {level > 0.4 && <path d="M19 6.8a7.6 7.6 0 0 1 0 10.4" />}
+      </g>
+    )}
+  </svg>
+);
+export const Sun = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <circle cx="12" cy="12" r="4.2" />
+    <g stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">{[0, 45, 90, 135, 180, 225, 270, 315].map((a) => <path key={a} d="M12 2.6v2.2" transform={`rotate(${a} 12 12)`} />)}</g>
+  </svg>
+);
+export const Battery = ({ size = 22, percent = 100, charging = false, color = "currentColor" }: P & { percent?: number; charging?: boolean; color?: string }) => (
+  <svg width={size} height={size * 0.55} viewBox="0 0 26 14" aria-hidden>
+    <rect x="0.75" y="0.75" width="21.5" height="12.5" rx="3.6" fill="none" stroke="currentColor" strokeOpacity=".45" strokeWidth="1.5" />
+    <rect x="2.5" y="2.5" width={Math.max(1.5, 18 * Math.min(1, percent / 100))} height="9" rx="2" fill={color} />
+    <path d="M23.8 5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2Z" fill="currentColor" fillOpacity=".45" />
+    {charging && <path d="M12.6 1.8 8.4 7.6h3.1l-1 4.6 4.3-5.9h-3.1l.9-4.5Z" fill="#fff" stroke="#000" strokeWidth=".6" />}
+  </svg>
+);
+export const Timer = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="13.5" r="7.5" /><path d="M12 13.5V9.5M9.5 2.5h5" /></svg>
+);
+export const Calendar = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M7 2.5a1 1 0 0 1 1 1V4.5h8V3.5a1 1 0 1 1 2 0v1h.5A2.5 2.5 0 0 1 21 7v11.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18.5V7a2.5 2.5 0 0 1 2.5-2.5H6v-1a1 1 0 0 1 1-1ZM5 10v8.5c0 .3.2.5.5.5h13c.3 0 .5-.2.5-.5V10H5Z" /></svg>
+);
+export const Tray = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M5.6 4h12.8a2 2 0 0 1 1.9 1.4L22 11v7.5a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 18.5V11l1.7-5.6A2 2 0 0 1 5.6 4Zm-1.4 8.5v6c0 .3.2.5.5.5h14.6c.3 0 .5-.2.5-.5v-6h-4.5a3.3 3.3 0 0 1-6.6 0H4.2Zm.3-2h5.3a1 1 0 0 1 1 1 1.2 1.2 0 0 0 2.4 0 1 1 0 0 1 1-1h5.3L18.3 6H5.7l-1.2 4.5Z" /></svg>
+);
+export const Gear = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path fillRule="evenodd" d="M10.4 2.2a1 1 0 0 1 1-.7h1.2a1 1 0 0 1 1 .7l.5 1.8c.5.2 1 .5 1.5.8l1.8-.5a1 1 0 0 1 1.1.4l.6 1a1 1 0 0 1-.1 1.2l-1.3 1.4c.1.5.1 1.1 0 1.7l1.3 1.3a1 1 0 0 1 .1 1.2l-.6 1a1 1 0 0 1-1.1.5l-1.8-.5c-.4.3-1 .6-1.5.8l-.5 1.8a1 1 0 0 1-1 .7h-1.2a1 1 0 0 1-1-.7l-.5-1.8a6 6 0 0 1-1.5-.8l-1.8.5a1 1 0 0 1-1.1-.5l-.6-1a1 1 0 0 1 .1-1.2l1.3-1.3a6 6 0 0 1 0-1.7L4.5 7.6a1 1 0 0 1-.1-1.2l.6-1a1 1 0 0 1 1.1-.4l1.8.5c.5-.3 1-.6 1.5-.8l.5-1.8ZM12 12.2a2.7 2.7 0 1 0 0-5.4 2.7 2.7 0 0 0 0 5.4Z" transform="translate(0 2.3)" /></svg>
+);
