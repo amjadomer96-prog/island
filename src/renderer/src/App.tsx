@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent } from "react";
 import type { CalendarEvent, ClaudeSession, ClaudeState, HudFlash, HudState, MediaState, Notice, OpenApp, Settings, ShelfFile, SystemState } from "../../shared/types";
 import { Bars } from "./components/Bars";
@@ -6,7 +6,7 @@ import { Expanded, type Tab } from "./components/Expanded";
 import { AppIcon, Battery, Speaker, Spark, Sun, Timer as TimerIcon, Tray } from "./components/icons";
 import { NoticeCard } from "./components/Notices";
 import { Ring } from "./components/TimerPanel";
-import { clock, FADE, leadSession, SPRING, STATUS_TEXT, useArtColor } from "./lib";
+import { CALM, clock, FADE, FADE_CALM, leadSession, OPEN, SETTLE, STATUS_TEXT, useArtColor } from "./lib";
 import { chime, useTimer } from "./timer";
 
 const api = window.island;
@@ -41,6 +41,9 @@ export function App() {
   const [timerDone, setTimerDone] = useState(false);
   const [dropping, setDropping] = useState(false);
   const accent = useArtColor(media?.art);
+  // Windows "Show animations" off: no springs, blur or slides, only short cross-fades.
+  const reduce = useReducedMotion();
+  const fade = reduce ? FADE_CALM : FADE;
   const hoverTimer = useRef<number | undefined>(undefined);
   const prevStatus = useRef(new Map<string, string>());
   const settingsRef = useRef(settings);
@@ -196,22 +199,23 @@ export function App() {
           onDrop={drop}
           initial={false}
           animate={{ width, height, borderRadius: corners(radius) }}
-          transition={SPRING}
+          // Opening is yours (a hover, a dragged file), so it may overshoot a little; everything else settles.
+          transition={reduce ? CALM : view === "expanded" || view === "drop" ? OPEN : SETTLE}
         >
           <AnimatePresence mode="popLayout" initial={false}>
             {view === "drop" && (
-              <motion.div key="drop" className="dropzone" {...FADE} style={{ width }}>
+              <motion.div key="drop" className="dropzone" {...fade} style={{ ...fade.style, width }}>
                 <Tray size={26} />
                 <span>Drop to keep on the shelf</span>
               </motion.div>
             )}
             {view === "notice" && notice && (
-              <motion.div key={"notice" + notice.id} ref={content} {...FADE} className="banner" style={{ width }}>
+              <motion.div key={"notice" + notice.id} ref={content} {...fade} className="banner" style={{ ...fade.style, width }}>
                 <NoticeCard n={notice} onClose={() => { api.system({ kind: "dismiss", id: notice.id }); setNotices((q) => q.slice(1)); }} />
               </motion.div>
             )}
             {view === "alert" && alert && (
-              <motion.div key={"alert" + alert.id + alert.status} className="compact" {...FADE} style={{ width }}>
+              <motion.div key={"alert" + alert.id + alert.status} className="compact" {...fade} style={{ ...fade.style, width }}>
                 <Spark size={18} className="spark" />
                 <span className="compact__label compact__grow">{alert.project}</span>
                 <span className={`dot dot--${alert.status}`} />
@@ -219,13 +223,13 @@ export function App() {
               </motion.div>
             )}
             {view === "timerDone" && (
-              <motion.div key="timerDone" className="compact" {...FADE} style={{ width }} onClick={() => setTimerDone(false)}>
+              <motion.div key="timerDone" className="compact" {...fade} style={{ ...fade.style, width }} onClick={() => setTimerDone(false)}>
                 <span className="compact__timer"><TimerIcon size={18} /></span>
                 <span className="compact__label">Timer done</span>
               </motion.div>
             )}
             {view === "flash" && flash && (
-              <motion.div key={"flash" + flash.kind} className="compact" {...FADE} style={{ width }}>
+              <motion.div key={"flash" + flash.kind} className="compact" {...fade} style={{ ...fade.style, width }}>
                 {flash.kind === "volume" && hud.volume && (
                   <>
                     <span className="compact__icon"><Speaker size={18} muted={hud.volume.muted} level={hud.volume.level} /></span>
@@ -250,24 +254,24 @@ export function App() {
               </motion.div>
             )}
             {view === "expanded" && (
-              <motion.div key="expanded" ref={content} {...FADE} style={{ width }}>
+              <motion.div key="expanded" ref={content} {...fade} style={{ ...fade.style, width }}>
                 <Expanded tab={tab} onTab={setTab} media={music} claude={claude} system={system} hud={hud} shelf={shelf} calendar={calendar} settings={settings} timer={timer} accent={accent} />
               </motion.div>
             )}
             {view === "opened" && opened && (
-              <motion.div key={"opened" + opened.hwnd} className="compact" {...FADE} style={{ width }}>
+              <motion.div key={"opened" + opened.hwnd} className="compact" {...fade} style={{ ...fade.style, width }}>
                 {opened.icon ? <img className="compact__art compact__icon" src={opened.icon} alt="" /> : <span className="compact__icon"><AppIcon size={18} /></span>}
                 <span className="compact__label compact__dim">{opened.name}</span>
               </motion.div>
             )}
             {view === "timer" && (
-              <motion.div key="timer" className="compact" {...FADE} style={{ width }}>
+              <motion.div key="timer" className="compact" {...fade} style={{ ...fade.style, width }}>
                 <Ring progress={timer.duration ? 1 - timer.left / timer.duration : 0} size={20} />
                 <span className="compact__label compact__timer-text">{clock(timer.left)}</span>
               </motion.div>
             )}
             {view === "music" && music && (
-              <motion.div key={"music" + music.title} className="compact" {...FADE} style={{ width }}>
+              <motion.div key={"music" + music.title} className="compact" {...fade} style={{ ...fade.style, width }}>
                 {music.art ? <img className="compact__art" src={music.art} alt="" /> : <span className="compact__art" style={{ background: "#1c1c1e" }} />}
                 <span className="compact__right">
                   {busy && <Spark size={14} className={`spark${busy.status === "working" ? " spark--working" : ""}`} />}
@@ -276,7 +280,7 @@ export function App() {
               </motion.div>
             )}
             {view === "claude" && busy && (
-              <motion.div key={"claude" + busy.status} className="compact" {...FADE} style={{ width }}>
+              <motion.div key={"claude" + busy.status} className="compact" {...fade} style={{ ...fade.style, width }}>
                 <Spark size={16} className={`spark${busy.status === "working" ? " spark--working" : ""}`} />
                 <span className="compact__label" style={{ color: busy.status === "waiting" ? "var(--waiting)" : "var(--text)" }}>
                   {busy.status === "working" ? busy.tool ?? "Working" : STATUS_TEXT[busy.status]}
@@ -292,9 +296,10 @@ export function App() {
 
 /** A slim level bar for volume and brightness, like the Mac's. */
 function Level({ value }: { value: number }) {
+  const reduce = useReducedMotion();
   return (
     <span className="level">
-      <motion.span className="level__fill" initial={false} animate={{ scaleX: Math.max(0, Math.min(1, value)) }} transition={{ type: "spring", stiffness: 600, damping: 40 }} />
+      <motion.span className="level__fill" initial={false} animate={{ scaleX: Math.max(0, Math.min(1, value)) }} transition={reduce ? { duration: 0 } : { type: "spring", bounce: 0, duration: 0.25 }} />
     </span>
   );
 }

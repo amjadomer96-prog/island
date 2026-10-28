@@ -26,6 +26,9 @@ export function Controls({ hud }: { hud: HudState }) {
   );
 }
 
+/** Past the ends the bar gives a little, with more resistance the further you pull (Apple's rubber band). */
+const rubberband = (over: number, size: number, c = 0.55) => (over * size * c) / (size + c * Math.abs(over));
+
 const ICON_ZONE = 36; // px at the left of the bar where a tap toggles mute instead of setting the level
 
 /**
@@ -43,23 +46,24 @@ function Slider({ label, value, onChange, icon, onIconTap, iconLabel }: {
   const track = useRef<HTMLDivElement>(null);
   const [local, setLocal] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
-  const start = useRef<{ x: number; inIcon: boolean; moved: boolean } | null>(null);
+  // The bar's untransformed box, taken at press time: the stretch below must not feed back into it.
+  const start = useRef<{ x: number; inIcon: boolean; moved: boolean; box: DOMRect } | null>(null);
+  const [stretch, setStretch] = useState(0); // px past an end, already rubber-banded; + right, - left
   const settle = useRef<number | undefined>(undefined);
   useEffect(() => () => { window.clearTimeout(settle.current); api.hold(false); }, []);
 
   const shown = local ?? value;
-  const at = (clientX: number) => {
-    const r = track.current!.getBoundingClientRect();
-    return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
-  };
+  const at = (clientX: number, box = start.current?.box ?? track.current!.getBoundingClientRect()) =>
+    Math.max(0, Math.min(1, (clientX - box.left) / box.width));
   const set = (v: number) => { setLocal(v); onChange(v); };
   // After you let go, hold your value until the system has caught up, then follow it again.
   const release = () => { window.clearTimeout(settle.current); settle.current = window.setTimeout(() => setLocal(null), 700); };
 
   const down = (e: PointerEvent<HTMLDivElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
-    const inIcon = !!onIconTap && e.clientX - track.current!.getBoundingClientRect().left < ICON_ZONE;
-    start.current = { x: e.clientX, inIcon, moved: false };
+    const box = track.current!.getBoundingClientRect();
+    const inIcon = !!onIconTap && e.clientX - box.left < ICON_ZONE;
+    start.current = { x: e.clientX, inIcon, moved: false, box };
     window.clearTimeout(settle.current);
     setDragging(true);
     api.hold(true);
@@ -72,11 +76,14 @@ function Slider({ label, value, onChange, icon, onIconTap, iconLabel }: {
     s.moved = true;
     api.hold(true); // renew: the notch stays open while the drag continues
     set(at(e.clientX));
+    const over = e.clientX < s.box.left ? e.clientX - s.box.left : e.clientX > s.box.right ? e.clientX - s.box.right : 0;
+    setStretch(over ? rubberband(over, s.box.width) : 0);
   };
   const up = () => {
     const s = start.current;
     start.current = null;
     setDragging(false);
+    setStretch(0); // springs back (CSS transition on the bar)
     api.hold(false);
     if (s?.inIcon && !s.moved) onIconTap?.();
     release();
@@ -96,6 +103,7 @@ function Slider({ label, value, onChange, icon, onIconTap, iconLabel }: {
     <div
       ref={track}
       className={`fill-slider${dragging ? " fill-slider--drag" : ""}`}
+      style={{ transform: stretch ? `scaleX(${1 + Math.abs(stretch) / (start.current?.box.width ?? 200)})` : undefined, transformOrigin: stretch > 0 ? "left center" : "right center" }}
       role="slider"
       tabIndex={0}
       aria-label={label}

@@ -1,15 +1,32 @@
 import { useEffect, useState } from "react";
 import type { ClaudeSession, MediaState } from "../../shared/types";
 
-/** Apple-like spring: quick, settles with a slight overshoot on the way out. */
-export const SPRING = { type: "spring", stiffness: 420, damping: 32, mass: 0.9 } as const;
+// Springs in Apple's terms: `bounce` is (1 − damping ratio), `duration` its response.
+/** Opening is something you asked for (a hover), so it may overshoot a touch, like the iPhone's island. */
+export const OPEN = { type: "spring", bounce: 0.22, duration: 0.5 } as const;
+/** Closing, banners and level changes settle without overshoot, and faster than they open. */
+export const SETTLE = { type: "spring", bounce: 0, duration: 0.34 } as const;
+/** With reduced motion: no springs, just a short cross-fade of size. */
+export const CALM = { type: "tween", duration: 0.15, ease: "easeOut" } as const;
+
+/**
+ * Content grows down out of the notch and goes back up into it, so it always appears to come
+ * from the same place (spatial consistency). Exits are quicker than entrances.
+ */
 export const FADE = {
-  initial: { opacity: 0, filter: "blur(6px)", scale: 0.96 },
+  initial: { opacity: 0, filter: "blur(6px)", scale: 0.94, y: -8 },
   // At rest the filter and transform are removed entirely: a lingering blur(0) or scale layer
   // re-rasterises the album art and leaves it soft.
-  animate: { opacity: 1, filter: "blur(0px)", scale: 1, transitionEnd: { filter: "none", transform: "none" } },
-  exit: { opacity: 0, filter: "blur(6px)", scale: 0.96 },
-  transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
+  animate: { opacity: 1, filter: "blur(0px)", scale: 1, y: 0, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }, transitionEnd: { filter: "none", transform: "none" } },
+  exit: { opacity: 0, filter: "blur(6px)", scale: 0.94, y: -8, transition: { duration: 0.16, ease: [0.4, 0, 1, 1] } },
+  style: { transformOrigin: "50% 0%" },
+} as const;
+/** Reduced motion: content cross-fades in place. */
+export const FADE_CALM = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.15 } },
+  exit: { opacity: 0, transition: { duration: 0.1 } },
+  style: {},
 } as const;
 
 export const time = (ms: number) => {
