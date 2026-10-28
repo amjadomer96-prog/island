@@ -1,0 +1,92 @@
+:root {
+  --island: #000;
+  --text: #f5f5f7;
+  --text-2: #a1a1a6;
+  --text-3: #6e6e73;
+  --line: rgba(255, 255, 255, 0.1);
+  --claude: #d97757;
+  --waiting: #ffb340;
+  --done: #30d158;
+  --error: #ff453a;
+  --accent: #fff; /* replaced at runtime by the album's own colour */
+  font-family: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; }
+html, body, #root { height: 100%; background: transparent; overflow: hidden; user-select: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+/* The window is a transparent canvas; the island hangs from the top centre. The second bubble
+   hangs off its right side, so the main island always stays centred, like the iPhone. */
+.stage { height: 100%; display: flex; justify-content: center; align-items: flex-start; padding-top: 8px; }
+.anchor { position: relative; }
+.anchor > .bubble { position: absolute; top: 0; left: calc(100% + 8px); }
+
+.island {
+  position: relative;
+  overflow: hidden;
+  background: var(--island);
+  color: var(--text);
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.55), 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+}
+.bubble { background: var(--island); display: grid; place-items: center; box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.55); }
+
+/* Compact */
+.compact { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 12px 0 7px; }
+.compact__art { width: 24px; height: 24px; border-radius: 7px; object-fit: cover; flex: none; }
+.compact__label { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+.compact--claude { padding-left: 12px; }
+
+/* Sound bars */
+.bars { display: flex; align-items: center; gap: 2.5px; height: 16px; }
+.bars span { width: 3px; height: 100%; border-radius: 2px; background: var(--accent); transform-origin: center; animation: bar 0.9s ease-in-out infinite; }
+.bars span:nth-child(2) { animation-delay: -0.45s; animation-duration: 0.75s; }
+.bars span:nth-child(3) { animation-delay: -0.2s; animation-duration: 1.05s; }
+.bars span:nth-child(4) { animation-delay: -0.65s; animation-duration: 0.85s; }
+.bars--paused span { animation: none; transform: scaleY(0.25); transition: transform 0.3s ease; } /* settle flat, not frozen mid-bounce */
+@keyframes bar { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+
+/* Claude spark */
+.spark { color: var(--claude); flex: none; }
+.spark--working { animation: spin 2.4s linear infinite; }
+@keyframes spin { to { rotate: 360deg; } }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dot--waiting { background: var(--waiting); box-shadow: 0 0 0 0 rgba(255, 179, 64, 0.6); animation: ping 1.6s ease-out infinite; }
+.dot--done { background: var(--done); }
+.dot--error { background: var(--error); }
+.dot--working { background: var(--claude); }
+.dot--idle { background: var(--text-3); }
+@keyframes ping { 70%, 100% { box-shadow: 0 0 0 7px rgba(255, 179, 64, 0); } }
+
+/* Expanded */
+.expanded { padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.player { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; }
+.player__art { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; background: #1c1c1e; }
+.player__art--empty { display: grid; place-items: center; color: var(--text-3); }
+.player__meta { min-width: 0; }
+.player__title { font-size: 16px; font-weight: 600; letter-spacing: -0.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player__artist { margin-top: 2px; font-size: 14px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player__app { margin-top: 4px; font-size: 11px; color: var(--text-3); letter-spacing: 0.02em; }
+
+.progress { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: 11px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.progress__track { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
+.progress__fill { height: 100%; border-radius: 2px; background: var(--text); transform-origin: left; }
+
+.controls { display: flex; justify-content: center; align-items: center; gap: 30px; margin-top: -2px; }
+.controls button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--text); transition: background-color 0.2s, scale 0.12s; }
+.controls button:hover { background: rgba(255, 255, 255, 0.08); }
+.controls button:active { scale: 0.9; }
+
+.claude { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.claude__row { display: flex; align-items: center; gap: 10px; font-size: 13px; min-height: 22px; }
+.claude__project { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.claude__status { margin-left: auto; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; text-align: right; }
+.claude__connect { margin-left: auto; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--text); color: #000; font-size: 12px; font-weight: 600; transition: scale 0.12s, opacity 0.2s; }
+.claude__connect:active { scale: 0.96; }
+.empty { font-size: 14px; color: var(--text-2); text-align: center; padding: 4px 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bars span, .spark--working, .dot--waiting { animation: none; }
+}
