@@ -24,7 +24,18 @@ A black notch that grows out of the top edge of the screen, like the Mac's, and 
 
 Connect Claude Code adds Island's hooks to `~/.claude/settings.json` next to any hooks already there, after saving a backup to `settings.json.island-backup`.
 
-## Run it
+## Install
+
+1. Open [Releases](https://github.com/amjadomer96-prog/island/releases/latest) and download **Island-Setup-0.1.0.exe**.
+2. Run it. The installer isn't signed yet, so Windows may say "Windows protected your PC": click **More info**, then **Run anyway**.
+3. Island appears at the top of the screen and in the system tray. Right-click the tray icon for Settings.
+
+To see notifications in the island, allow it in Windows Settings → Privacy & security → Notifications → "Let apps access your notifications". To show Claude Code sessions, choose **Connect Claude Code** from the tray menu.
+
+Needs Windows 10 or 11.
+
+## Build it yourself
+
 
 ```bash
 npm install        # also downloads the Electron runtime
