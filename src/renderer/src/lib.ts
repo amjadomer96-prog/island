@@ -5,7 +5,9 @@ import type { ClaudeSession, MediaState } from "../../shared/types";
 export const SPRING = { type: "spring", stiffness: 420, damping: 32, mass: 0.9 } as const;
 export const FADE = {
   initial: { opacity: 0, filter: "blur(6px)", scale: 0.96 },
-  animate: { opacity: 1, filter: "blur(0px)", scale: 1 },
+  // At rest the filter and transform are removed entirely: a lingering blur(0) or scale layer
+  // re-rasterises the album art and leaves it soft.
+  animate: { opacity: 1, filter: "blur(0px)", scale: 1, transitionEnd: { filter: "none", transform: "none" } },
   exit: { opacity: 0, filter: "blur(6px)", scale: 0.96 },
   transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
 } as const;
@@ -77,4 +79,13 @@ export const STATUS_TEXT: Record<ClaudeSession["status"], string> = { working: "
 export function leadSession(sessions: ClaudeSession[]) {
   const rank = { waiting: 0, error: 1, working: 2, done: 3, idle: 4 } as const;
   return [...sessions].sort((a, b) => rank[a.status] - rank[b.status] || b.updated - a.updated)[0];
+}
+
+/** "now", "5m", "2h", "3d": how long ago, the way notification centres show it. */
+export function ago(at: number) {
+  const s = Math.max(0, (Date.now() - at) / 1000);
+  if (s < 60) return "now";
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  return `${Math.floor(s / 86400)}d`;
 }
