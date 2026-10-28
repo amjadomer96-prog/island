@@ -10,6 +10,7 @@ export const DEFAULTS: Settings = {
   launchAtLogin: false,
   calendarUrl: "",
   timerSound: true,
+  noticeSound: true,
 };
 
 let current: Settings = DEFAULTS;

@@ -9,7 +9,8 @@ import { ClaudeActivity, MusicActivity, TimerActivity } from "./components/LiveA
 import { NoticeCard } from "./components/Notices";
 import { Ring } from "./components/TimerPanel";
 import { CALM, clock, FADE, FADE_CALM, leadSession, OPEN, SETTLE, STATUS_TEXT, useArtColor } from "./lib";
-import { chime, useTimer } from "./timer";
+import { chime, noticeSound } from "./sound";
+import { useTimer } from "./timer";
 
 const api = window.island;
 const WINDOW_W = 640; // matches the window in src/main/index.ts
@@ -35,7 +36,7 @@ function deviceName(name: string) {
 }
 const isHeadphones = (name: string) => /airpods|buds|headphone|headset|earbud|hands-free|bluetooth|\bwh-|\bwf-|beats/i.test(name);
 
-const DEFAULT_SETTINGS: Settings = { notifications: true, openedApps: true, hud: true, battery: true, launchAtLogin: false, calendarUrl: "", timerSound: true };
+const DEFAULT_SETTINGS: Settings = { notifications: true, openedApps: true, hud: true, battery: true, launchAtLogin: false, calendarUrl: "", timerSound: true, noticeSound: true };
 
 type Activity = "music" | "timer" | "claude";
 
@@ -68,6 +69,8 @@ export function App() {
   const prevStatus = useRef(new Map<string, string>());
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+  const hudRef = useRef(hud);
+  hudRef.current = hud;
 
   const onTimerDone = useCallback(() => {
     setTimerDone(true);
@@ -84,7 +87,11 @@ export function App() {
       api.onCalendar(setCalendar),
       api.onSettings(setSettings),
       api.onFlash((kind) => setFlash({ kind, at: Date.now() })),
-      api.onNotice((n) => setNotices((q) => [...q.filter((x) => x.id !== n.id), n].slice(-5))),
+      api.onNotice((n) => {
+        setNotices((q) => [...q.filter((x) => x.id !== n.id), n].slice(-5));
+        // Quiet while Do Not Disturb is on, as on the Mac.
+        if (settingsRef.current.noticeSound && !hudRef.current.focus) noticeSound();
+      }),
       api.onOpened(setOpened),
       api.onSearchOpen(() => { setSearching(true); api.searchFocus(true); }),
       api.onClaude((state) => {

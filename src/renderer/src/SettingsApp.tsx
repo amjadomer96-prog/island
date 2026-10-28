@@ -9,6 +9,7 @@ const TOGGLES: Toggle[] = [
   { key: "openedApps", title: "Opened apps", text: "Briefly show an app in the notch when you open it." },
   { key: "hud", title: "Volume and brightness", text: "Show the level in the notch when it changes." },
   { key: "battery", title: "Battery", text: "Show when the charger goes in and when the battery runs low." },
+  { key: "noticeSound", title: "Notification sound", text: "Play a light tap when a notification drops down. Quiet during Do Not Disturb." },
   { key: "timerSound", title: "Timer sound", text: "Play a chime when a timer ends." },
   { key: "launchAtLogin", title: "Open at login", text: "Start Island when you sign in to Windows." },
 ];

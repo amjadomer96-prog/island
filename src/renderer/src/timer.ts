@@ -16,21 +16,6 @@ function load(): TimerState {
   try { return { ...IDLE, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") }; } catch { return IDLE; }
 }
 
-/** A soft two-note chime, made on the spot so the app ships no sound files. */
-export function chime() {
-  try {
-    const ctx = new AudioContext();
-    [880, 1318.5].forEach((f, i) => {
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = "sine"; o.frequency.value = f;
-      const t = ctx.currentTime + i * 0.18;
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.18, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-      o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 1);
-    });
-    setTimeout(() => ctx.close(), 1600);
-  } catch { /* no audio device */ }
-}
-
 export function useTimer(onDone: () => void) {
   const [state, setState] = useState<TimerState>(load);
   const [, tick] = useState(0);

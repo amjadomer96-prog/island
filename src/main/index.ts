@@ -20,6 +20,8 @@ const WIDTH = 640;
 const HEIGHT = 560;
 
 if (!app.requestSingleInstanceLock()) app.quit();
+// The island plays its sounds without a click first.
+app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 
 let win: BrowserWindow | null = null;
 let settingsWin: BrowserWindow | null = null;

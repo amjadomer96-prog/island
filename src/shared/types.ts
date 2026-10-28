@@ -159,4 +159,6 @@ export interface Settings {
   /** A private calendar address (.ics) from Google Calendar, Outlook or iCloud. */
   calendarUrl: string;
   timerSound: boolean;
+  /** A short sound when a notification drops down. */
+  noticeSound: boolean;
 }
