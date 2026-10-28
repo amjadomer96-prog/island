@@ -11,7 +11,6 @@
   --error: #ff453a;
   --timer: #ff9f0a;
   --accent: #fff; /* replaced at runtime by the album's own colour */
-  --shoulder: 12px;
   /* Segoe UI Variable has optical cuts, like Apple's SF: Text for body, Display for large titles,
      Small for tiny labels (see the Typography block at the end). */
   font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
@@ -24,45 +23,36 @@ html, body, #root { height: 100%; background: transparent; overflow: hidden; use
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 img { display: block; }
 
-/* ---------- The notch ----------
-   The window is a transparent canvas; the notch grows out of the top edge of the screen, as on a
-   Mac: flat on top, rounded at the bottom, with curved black shoulders where it meets the edge. */
+/* ---------- The island ----------
+   Measured from Apple's macOS 27 Dynamic Island: a black pill floating just below the top edge,
+   centred in the menu bar, that opens into a card with ~24pt corners. The window is a transparent
+   canvas; the island hangs from the top centre. */
 .stage { height: 100%; display: flex; justify-content: center; align-items: flex-start; }
 .anchor { position: relative; }
-.anchor::before, .anchor::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  width: var(--shoulder);
-  height: var(--shoulder);
-  pointer-events: none;
-}
-.anchor::before { right: 100%; background: radial-gradient(circle at 0 100%, transparent calc(var(--shoulder) - 0.5px), var(--island) var(--shoulder)); }
-.anchor::after { left: 100%; background: radial-gradient(circle at 100% 100%, transparent calc(var(--shoulder) - 0.5px), var(--island) var(--shoulder)); }
-
 .island {
   position: relative;
   overflow: hidden;
   background: var(--island);
   color: var(--text);
-  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.55);
 }
+.bubble { position: absolute; top: 0; overflow: hidden; background: var(--island); display: grid; place-items: center; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.55); }
+.bubble__art { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; }
 
 /* ---------- Closed notch: content either side ---------- */
-.compact { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px 0 10px; }
-.compact__art { width: 24px; height: 24px; border-radius: 6px; object-fit: cover; flex: none; image-rendering: auto; }
-.compact__icon { width: 22px; height: 22px; display: grid; place-items: center; color: var(--text-2); flex: none; object-fit: contain; border-radius: 5px; }
-.compact__label { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Leading content sits left of the (imaginary) camera, trailing content right, as on Apple's island. */
+.compact { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 10px 0 4px; }
+.compact--wide { padding: 0 14px 0 12px; }
+.compact__art { width: 16px; height: 16px; border-radius: 4px; object-fit: cover; flex: none; image-rendering: auto; }
+.compact__icon { width: 16px; height: 16px; display: grid; place-items: center; color: var(--text-2); flex: none; object-fit: contain; border-radius: 4px; }
+.compact__label { font-size: 12px; font-weight: 600; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .compact__grow { flex: 1; min-width: 0; }
 .compact__dim { color: var(--text-2); font-weight: 500; }
 .compact__right { display: flex; align-items: center; gap: 10px; }
 
 /* Sound bars */
-.bars { display: flex; align-items: center; gap: 2.5px; height: 16px; }
-.bars span { width: 3px; height: 100%; border-radius: 2px; background: var(--accent); transform-origin: center; animation: bar 0.9s ease-in-out infinite; }
-.bars span:nth-child(2) { animation-delay: -0.45s; animation-duration: 0.75s; }
-.bars span:nth-child(3) { animation-delay: -0.2s; animation-duration: 1.05s; }
-.bars span:nth-child(4) { animation-delay: -0.65s; animation-duration: 0.85s; }
+.bars { display: flex; align-items: center; gap: 2px; height: 12px; }
+.bars span { width: 2.5px; height: 100%; border-radius: 2px; background: var(--accent); transform-origin: center; animation: bar 0.9s ease-in-out infinite; }
 .bars--paused span { animation: none; transform: scaleY(0.25); transition: transform 0.3s ease; } /* settle flat, not frozen mid-bounce */
 @keyframes bar { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
 
@@ -152,10 +142,10 @@ img { display: block; }
 .tab__badge--soft { background: #3a3a3c; }
 
 /* ---------- Level flash (volume / brightness) ---------- */
-.level { flex: 1; max-width: 190px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.2); overflow: hidden; }
+.level { flex: 1; max-width: 170px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.2); overflow: hidden; }
 .level__fill { display: block; height: 100%; background: var(--text); border-radius: 3px; transform-origin: left; }
 .compact__timer { color: var(--timer); display: grid; place-items: center; }
-.compact__timer-text { color: var(--timer); font-variant-numeric: tabular-nums; font-size: 14px; }
+.compact__timer-text { color: var(--timer); font-variant-numeric: tabular-nums; font-size: 12px; }
 
 /* ---------- Sliders (Control Center) ---------- */
 .sliders { display: flex; gap: 12px; }
@@ -262,3 +252,45 @@ body.settings-body, body.settings-body #root { background: #111113; overflow: au
   :is(.tab, .notice__open, .next-event, .shelf__file, .app__open, .preset, .pill-btn, .round, .controls button):active { scale: 1; }
   .fill-slider, .fill-slider__fill { transition-duration: 0.01s; }
 }
+
+/* ---------- Live activities, open (macOS 27 Dynamic Island) ----------
+   Measured from Apple's screenshot of the open music activity: ~282 × 150pt card, 16pt padding,
+   48pt art with ~8pt corners, title 14pt semibold, artist 13pt secondary, a thin 5pt progress
+   bar between the times, transport controls ~74pt apart. */
+.la { padding: 16px 16px 12px; }
+.la-music__head { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+.la-music__art { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; background: #1c1c1e; }
+.la-music__art--empty { display: grid; place-items: center; color: var(--text-3); }
+.la-music__meta { min-width: 0; padding-top: 5px; }
+.la-music__title { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.la-music__artist { margin-top: 1px; font-size: 13px; color: rgba(235, 235, 245, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.la-music__wave { padding-top: 7px; }
+.la-music__wave .bars { height: 12px; gap: 1.5px; }
+.la-music__wave .bars span { width: 1.6px; background: rgba(235, 235, 245, 0.6); }
+.la-music__time { margin-top: 14px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  font-family: "Segoe UI Variable Small", "Segoe UI", system-ui, sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.01em;
+  color: rgba(235, 235, 245, 0.6); font-variant-numeric: tabular-nums; }
+.la-music__track { height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.2); overflow: hidden; }
+.la-music__fill { height: 100%; border-radius: 3px; background: rgba(255, 255, 255, 0.62); transform-origin: left; }
+.la-music__controls { margin-top: 6px; display: flex; justify-content: center; align-items: center; gap: 30px; }
+.la-music__controls button { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: #fff; transition: background-color 0.2s, scale 0.32s cubic-bezier(0.2, 1.3, 0.4, 1); }
+.la-music__controls button:hover { background: rgba(255, 255, 255, 0.08); }
+.la-music__controls button:active { scale: 0.9; transition-duration: 0.2s, 0.07s; }
+
+.la--timer { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 14px 14px; }
+.la-timer__buttons { display: flex; gap: 10px; }
+.la-timer__btn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 159, 10, 0.22); color: var(--timer); transition: scale 0.32s cubic-bezier(0.2, 1.3, 0.4, 1); }
+.la-timer__btn--x { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.la-timer__btn:active { scale: 0.9; transition-duration: 0.07s; }
+.la-timer__right { display: flex; flex-direction: column; align-items: flex-end; gap: 0; }
+.la-timer__label { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: var(--timer); }
+.la-timer__time { font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; font-size: 32px; font-weight: 300; line-height: 1.1; letter-spacing: -0.02em; color: var(--timer); font-variant-numeric: tabular-nums; }
+
+.la--claude { display: flex; align-items: center; gap: 12px; padding: 16px; }
+.la-claude__icon { width: 40px; height: 40px; flex: none; border-radius: 10px; display: grid; place-items: center; background: rgba(217, 119, 87, 0.16); }
+.la-claude__meta { min-width: 0; }
+.la-claude__project { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.la-claude__status { margin-top: 1px; font-size: 12px; color: rgba(235, 235, 245, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.la-claude__status--waiting { color: var(--waiting); }
+.la-claude__status--error { color: var(--error); }
+.la-claude__status--done { color: var(--done); }
