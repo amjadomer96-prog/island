@@ -14,6 +14,11 @@ A black notch that grows out of the top edge of the screen, like the Mac's, and 
 - **File shelf**: drag files onto the notch to keep them, drag them back out into any app.
 - **Timer**: presets from 1 to 45 minutes; runs in the closed notch with an orange ring, chimes when done.
 - **Calendar**: month view and the next 7 days from a private .ics address (Google, Outlook, iCloud).
+- **Search** (Alt+Space; Ctrl+Alt+Space or Alt+Shift+Space when another app already uses it, or the magnifier in the open notch): apps, open windows, files from the Windows Search index, quick sums, the web.
+- **Ask Claude** from search, in place of Siri: the answer streams into the island. It runs with no tools, so it can't change anything on the PC. Needs Claude Code installed.
+- **Sound output**: switching to headphones or AirPods shows "Connected" in the notch; other switches show the new device.
+- **Focus**: Do Not Disturb on or off shows in the notch.
+- **Calls and Nearby Share** notifications (Phone Link, Windows sharing) get their own badges, like calls and AirDrop on a Mac.
 - **Claude Code**: each session as working (with its tool), needs you, done or stopped; pops open when one needs you or finishes.
 - **Settings window** (tray icon, or the gear in the notch): every feature on or off, open at login, calendar link, Connect Claude Code.
 
@@ -33,6 +38,6 @@ If you start it from a VS Code terminal, clear `ELECTRON_RUN_AS_NODE` first (VS 
 ## How it's built
 
 - `src/main/`: Electron main process. A transparent always-on-top window at the top centre that lets clicks through everywhere except the island (`index.ts`); the music bridge (`media.ts`); the Claude Code hook server on `127.0.0.1:47831` (`claude.ts`).
-- `resources/*.ps1`: small PowerShell helpers that stream one JSON line per change: `media.ps1` (system media controls), `system.ps1` (open windows, notifications), `hud.ps1` (volume, brightness, battery).
+- `resources/*.ps1`: small PowerShell helpers that stream one JSON line per change: `media.ps1` (system media controls), `system.ps1` (open windows, notifications), `hud.ps1` (volume, brightness, battery, sound output, Focus), `search.ps1` (Start menu apps and icons, Windows Search index).
 - `build/icon.png`: placeholder app icon until the product has its own.
 - `src/renderer/`: the island UI in React, animated with Motion springs.

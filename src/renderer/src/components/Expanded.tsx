@@ -6,7 +6,7 @@ import { AppsGrid } from "./AppsGrid";
 import { CalendarPanel } from "./CalendarPanel";
 import { ClaudeList } from "./ClaudeList";
 import { Controls } from "./Controls";
-import { Battery, Bell, Calendar, Gear, Grid, Home, Timer, Tray } from "./icons";
+import { Battery, Bell, Calendar, Gear, Grid, Home, SearchIcon, Timer, Tray } from "./icons";
 import { Notices } from "./Notices";
 import { Player } from "./Player";
 import { Shelf } from "./Shelf";
@@ -17,6 +17,8 @@ export type Tab = "home" | "apps" | "shelf" | "timer" | "calendar" | "alerts";
 const api = window.island;
 
 interface Props {
+  shortcut: string | null;
+  onSearch: () => void;
   tab: Tab;
   onTab: (t: Tab) => void;
   media: MediaState | null;
@@ -31,7 +33,7 @@ interface Props {
 }
 
 /** The open notch: a tab bar with the date and battery, then the chosen tab. */
-export function Expanded({ tab, onTab, media, claude, system, hud, shelf, calendar, settings, timer, accent }: Props) {
+export function Expanded({ shortcut, onSearch, tab, onTab, media, claude, system, hud, shelf, calendar, settings, timer, accent }: Props) {
   const count = system.notifications.length;
   const tabs: [Tab, string, ReactElement][] = [
     ["home", "Home", <Home key="h" />],
@@ -43,6 +45,7 @@ export function Expanded({ tab, onTab, media, claude, system, hud, shelf, calend
   ];
   const bat = hud.battery?.present ? hud.battery : null;
   const next = calendar.find((e) => e.end > Date.now());
+  const searchLabel = shortcut ? `Search (${shortcut.replace("Control", "Ctrl")})` : "Search";
 
   return (
     <div className="expanded">
@@ -57,6 +60,7 @@ export function Expanded({ tab, onTab, media, claude, system, hud, shelf, calend
           ))}
         </div>
         <div className="topbar__right">
+          <button type="button" className="tab" aria-label={searchLabel} title={searchLabel} onClick={onSearch}><SearchIcon /></button>
           <Today />
           {bat && (
             <span className="chip" title={bat.charging ? "Charging" : "On battery"}>

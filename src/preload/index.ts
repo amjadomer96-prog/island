@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from "electron";
-import type { CalendarEvent, ClaudeState, HudFlash, HudState, IslandApi, MediaState, Notice, OpenApp, Settings, ShelfFile, SystemState } from "../shared/types";
+import type { AskEvent, CalendarEvent, ClaudeState, HudFlash, HudState, IslandApi, MediaState, Notice, OpenApp, Settings, ShelfFile, SystemState } from "../shared/types";
 
 function listen<T>(channel: string, cb: (value: T) => void) {
   const handler = (_e: IpcRendererEvent, value: T) => cb(value);
@@ -30,6 +30,13 @@ const api: IslandApi = {
   openSettings: () => ipcRenderer.send("open-settings"),
   saveSettings: (patch) => ipcRenderer.invoke("save-settings", patch),
   setBounds: (rect) => ipcRenderer.send("bounds", rect),
+  onSearchOpen: (cb) => listen<void>("search-open", () => cb()),
+  searchFocus: (on) => ipcRenderer.send("search-focus", !!on),
+  search: (query) => ipcRenderer.invoke("search", query),
+  launch: (target) => ipcRenderer.send("launch", target),
+  ask: (id, question) => ipcRenderer.send("ask", id, question),
+  askCancel: () => ipcRenderer.send("ask-cancel"),
+  onAsk: (cb) => listen<AskEvent>("ask", cb),
   hold: (on) => ipcRenderer.send("hold", !!on),
   connectClaude: () => ipcRenderer.invoke("connect-claude"),
   quit: () => ipcRenderer.send("quit"),

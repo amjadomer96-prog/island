@@ -3,7 +3,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import type { CalendarEvent, ClaudeSession, ClaudeState, HudFlash, HudState, MediaState, Notice, OpenApp, Settings, ShelfFile, SystemState } from "../../shared/types";
 import { Bars } from "./components/Bars";
 import { Expanded, type Tab } from "./components/Expanded";
-import { AppIcon, Battery, Speaker, Spark, Sun, Timer as TimerIcon, Tray } from "./components/icons";
+import { AppIcon, Battery, Headphones, Moon, Speaker, Spark, Sun, Timer as TimerIcon, Tray } from "./components/icons";
+import { Search } from "./components/Search";
 import { ClaudeActivity, MusicActivity, TimerActivity } from "./components/LiveActivity";
 import { NoticeCard } from "./components/Notices";
 import { Ring } from "./components/TimerPanel";
@@ -24,7 +25,15 @@ const GAP = 6;
 const NOTICE_MS = 6000;
 const ALERT_MS = 5000;
 const OPENED_MS = 2200;
-const FLASH_MS = { volume: 1500, brightness: 1500, charging: 3000, "low-battery": 4000 } as const;
+const FLASH_MS = { volume: 1500, brightness: 1500, charging: 3000, "low-battery": 4000, output: 2600, focus: 2600 } as const;
+
+/** "Headphones (AirPods Pro)" → "AirPods Pro"; "Speakers (Realtek(R) Audio)" → "Speakers". */
+function deviceName(name: string) {
+  const inner = name.match(/\((.+)\)$/)?.[1];
+  // A product name in brackets (AirPods Pro) reads best; a sound chip's name (Realtek Audio) doesn't.
+  return inner && !/realtek|high definition|intel|amd|nvidia|audio$/i.test(inner) ? inner.replace(/\(R\)/g, "") : name.replace(/\s*\(.*$/, "");
+}
+const isHeadphones = (name: string) => /airpods|buds|headphone|headset|earbud|hands-free|bluetooth|\bwh-|\bwf-|beats/i.test(name);
 
 const DEFAULT_SETTINGS: Settings = { notifications: true, openedApps: true, hud: true, battery: true, launchAtLogin: false, calendarUrl: "", timerSound: true };
 
@@ -34,7 +43,9 @@ export function App() {
   const [media, setMedia] = useState<MediaState | null>(null);
   const [claude, setClaude] = useState<ClaudeState>({ connected: false, sessions: [] });
   const [system, setSystem] = useState<SystemState>({ apps: [], notifications: [], access: "Unspecified" });
-  const [hud, setHud] = useState<HudState>({ volume: null, brightness: null, battery: null });
+  const [hud, setHud] = useState<HudState>({ volume: null, brightness: null, battery: null, output: null, focus: null });
+  const [searching, setSearching] = useState(false);
+  const [shortcut, setShortcut] = useState<string | null>(null);
   const [shelf, setShelf] = useState<ShelfFile[]>([]);
   const [calendar, setCalendar] = useState<CalendarEvent[]>([]);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -75,6 +86,7 @@ export function App() {
       api.onFlash((kind) => setFlash({ kind, at: Date.now() })),
       api.onNotice((n) => setNotices((q) => [...q.filter((x) => x.id !== n.id), n].slice(-5))),
       api.onOpened(setOpened),
+      api.onSearchOpen(() => { setSearching(true); api.searchFocus(true); }),
       api.onClaude((state) => {
         setClaude(state);
         // A session that starts needing you, finishes or fails drops down briefly.
@@ -93,6 +105,7 @@ export function App() {
       setShelf(s.shelf);
       setCalendar(s.calendar);
       setSettings(s.settings);
+      setShortcut(s.shortcut);
     });
     return () => offs.forEach((off) => off());
   }, []);
@@ -140,8 +153,9 @@ export function App() {
   const second = activities[1] ?? null;
 
   // What the island shows, most urgent first. Banners win over hover so they can be clicked.
-  type View = "drop" | "notice" | "alert" | "timerDone" | "flash" | "panel" | "activity" | "opened" | "compact" | "idle";
+  type View = "drop" | "search" | "notice" | "alert" | "timerDone" | "flash" | "panel" | "activity" | "opened" | "compact" | "idle";
   const view: View = dropping ? "drop"
+    : searching ? "search"
     : notice ? "notice"
     : alert ? "alert"
     : timerDone ? "timerDone"
@@ -155,7 +169,7 @@ export function App() {
   // Measure open content so the island springs to its exact height.
   const content = useRef<HTMLDivElement>(null);
   const [contentH, setContentH] = useState(150);
-  const measured = view === "panel" || view === "notice" || view === "activity";
+  const measured = view === "panel" || view === "notice" || view === "activity" || view === "search";
   useLayoutEffect(() => {
     const el = content.current;
     if (!measured || !el) return;
@@ -166,7 +180,7 @@ export function App() {
 
   const compactW = { music: 196, timer: 150, claude: 184 }[main ?? "music"];
   const width = {
-    drop: 360, notice: 360, alert: 300, timerDone: 200, flash: flash?.kind === "charging" || flash?.kind === "low-battery" ? 236 : 220,
+    drop: 360, search: 560, notice: 360, alert: 300, timerDone: 200, flash: flash?.kind === "volume" || flash?.kind === "brightness" ? 220 : 260,
     panel: 560, activity: 282, opened: 210, compact: compactW, idle: IDLE_W,
   }[view];
   const height = measured ? contentH : view === "drop" ? 110 : view === "alert" ? 40 : PILL_H;
@@ -197,10 +211,19 @@ export function App() {
   enterRef.current = enter;
   leaveRef.current = leave;
 
+  // Search closes with Escape, by clicking elsewhere (the window loses focus), or after opening something.
+  const closeSearch = useCallback(() => { setSearching(false); api.searchFocus(false); }, []);
+  useEffect(() => {
+    if (!searching) return;
+    const blur = () => closeSearch();
+    window.addEventListener("blur", blur);
+    return () => window.removeEventListener("blur", blur);
+  }, [searching, closeSearch]);
+
   // A click on the island itself (not on one of its controls) opens or closes the panel.
   const click = (e: MouseEvent) => {
     if ((e.target as HTMLElement).closest("button, a, input, [role=slider], [draggable=true]")) return;
-    if (view === "notice" || view === "alert" || view === "drop") return;
+    if (view === "notice" || view === "alert" || view === "drop" || view === "search") return;
     setPanel((p) => !p);
   };
 
@@ -243,6 +266,11 @@ export function App() {
                 <span>Drop to keep on the shelf</span>
               </motion.div>
             )}
+            {view === "search" && (
+              <motion.div key="search" ref={content} {...fade} style={st(width)}>
+                <Search onClose={closeSearch} />
+              </motion.div>
+            )}
             {view === "notice" && notice && (
               <motion.div key={"notice" + notice.id} ref={content} {...fade} className="banner" style={st(width)}>
                 <NoticeCard n={notice} onClose={() => { api.system({ kind: "dismiss", id: notice.id }); setNotices((q) => q.slice(1)); }} />
@@ -276,6 +304,20 @@ export function App() {
                     <Level value={hud.brightness / 100} />
                   </>
                 )}
+                {flash.kind === "output" && hud.output && (
+                  <>
+                    <span className="compact__icon" style={{ color: "#fff" }}>{isHeadphones(hud.output.name) ? <Headphones size={15} /> : <Speaker size={15} />}</span>
+                    <span className="compact__label">{deviceName(hud.output.name)}</span>
+                    {isHeadphones(hud.output.name) && <span className="compact__label" style={{ color: "var(--done)" }}>Connected</span>}
+                  </>
+                )}
+                {flash.kind === "focus" && hud.focus !== null && (
+                  <>
+                    <span className="compact__icon" style={{ color: hud.focus ? "var(--focus)" : "var(--text-2)" }}><Moon size={15} /></span>
+                    <span className="compact__label">Do Not Disturb</span>
+                    <span className="compact__label" style={{ color: hud.focus ? "var(--focus)" : "var(--text-2)" }}>{hud.focus ? "On" : "Off"}</span>
+                  </>
+                )}
                 {(flash.kind === "charging" || flash.kind === "low-battery") && bat && (
                   <>
                     <span className="compact__label" style={{ color: flash.kind === "charging" ? "var(--done)" : "var(--error)" }}>{flash.kind === "charging" ? "Charging" : "Low Battery"}</span>
@@ -289,7 +331,7 @@ export function App() {
             )}
             {view === "panel" && (
               <motion.div key="panel" ref={content} {...fade} style={st(width)}>
-                <Expanded tab={tab} onTab={setTab} media={music} claude={claude} system={system} hud={hud} shelf={shelf} calendar={calendar} settings={settings} timer={timer} accent={accent} />
+                <Expanded shortcut={shortcut} onSearch={() => { setPanel(false); setSearching(true); api.searchFocus(true); }} tab={tab} onTab={setTab} media={music} claude={claude} system={system} hud={hud} shelf={shelf} calendar={calendar} settings={settings} timer={timer} accent={accent} />
               </motion.div>
             )}
             {view === "activity" && main && (

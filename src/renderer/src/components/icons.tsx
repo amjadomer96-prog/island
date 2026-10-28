@@ -76,3 +76,18 @@ export const Tray = ({ size = 16 }: P) => (
 export const Gear = ({ size = 16 }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path fillRule="evenodd" d="M10.4 2.2a1 1 0 0 1 1-.7h1.2a1 1 0 0 1 1 .7l.5 1.8c.5.2 1 .5 1.5.8l1.8-.5a1 1 0 0 1 1.1.4l.6 1a1 1 0 0 1-.1 1.2l-1.3 1.4c.1.5.1 1.1 0 1.7l1.3 1.3a1 1 0 0 1 .1 1.2l-.6 1a1 1 0 0 1-1.1.5l-1.8-.5c-.4.3-1 .6-1.5.8l-.5 1.8a1 1 0 0 1-1 .7h-1.2a1 1 0 0 1-1-.7l-.5-1.8a6 6 0 0 1-1.5-.8l-1.8.5a1 1 0 0 1-1.1-.5l-.6-1a1 1 0 0 1 .1-1.2l1.3-1.3a6 6 0 0 1 0-1.7L4.5 7.6a1 1 0 0 1-.1-1.2l.6-1a1 1 0 0 1 1.1-.4l1.8.5c.5-.3 1-.6 1.5-.8l.5-1.8ZM12 12.2a2.7 2.7 0 1 0 0-5.4 2.7 2.7 0 0 0 0 5.4Z" transform="translate(0 2.3)" /></svg>
 );
+export const Headphones = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 3a9 9 0 0 0-9 9v5.5A2.5 2.5 0 0 0 5.5 20H7a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H5v-1a7 7 0 0 1 14 0v1h-2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h1.5a2.5 2.5 0 0 0 2.5-2.5V12a9 9 0 0 0-9-9Z" /></svg>
+);
+export const Moon = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M20.2 14.6A8.5 8.5 0 0 1 9.4 3.8a.6.6 0 0 0-.8-.7 9.5 9.5 0 1 0 12.3 12.3.6.6 0 0 0-.7-.8Z" /></svg>
+);
+export const Phone = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M7.4 3.2 9.6 3a1 1 0 0 1 1 .7l1.1 3.6a1 1 0 0 1-.3 1L9.9 9.7a11.8 11.8 0 0 0 4.4 4.4l1.4-1.5a1 1 0 0 1 1-.3l3.6 1.1a1 1 0 0 1 .7 1l-.2 2.2a2.5 2.5 0 0 1-2.6 2.3C10.3 18.5 5.5 13.7 5.1 5.8a2.5 2.5 0 0 1 2.3-2.6Z" /></svg>
+);
+export const Share = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 15V3m0 0L8 7m4-4 4 4M5 12v6.5A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V12" /></svg>
+);
+export const SearchIcon = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" /></svg>
+);

@@ -90,6 +90,15 @@ export interface IslandApi {
   saveSettings(patch: Partial<Settings>): Promise<Settings>;
   /** Where the island is, in window pixels, so the window only catches the pointer there. */
   setBounds(rect: { x: number; y: number; width: number; height: number }): void;
+  /** The search shortcut (Alt+Space, or a fallback when another app holds it) or the search button asks the island to show Spotlight. */
+  onSearchOpen(cb: () => void): () => void;
+  /** Search takes the keyboard while open; closing hands it back to the app you were in. */
+  searchFocus(on: boolean): void;
+  search(query: string): Promise<SearchResults>;
+  launch(target: LaunchTarget): void;
+  ask(id: number, question: string): void;
+  askCancel(): void;
+  onAsk(cb: (event: AskEvent) => void): () => void;
   /** Keep the notch open and catching the pointer, e.g. while a slider is dragged past its edge. */
   hold(on: boolean): void;
   media(command: MediaCommand): void;
@@ -97,7 +106,7 @@ export interface IslandApi {
   connectClaude(): Promise<{ ok: boolean; error?: string }>;
   quit(): void;
   /** The latest state, for when the UI starts after the first updates went out. */
-  state(): Promise<{ media: MediaState | null; claude: ClaudeState | null; system: SystemState | null; hud: HudState; shelf: ShelfFile[]; calendar: CalendarEvent[]; settings: Settings }>;
+  state(): Promise<{ media: MediaState | null; claude: ClaudeState | null; system: SystemState | null; hud: HudState; shelf: ShelfFile[]; calendar: CalendarEvent[]; settings: Settings; shortcut: string | null }>;
 }
 
 /** Volume, brightness and battery, for the notch's HUD. Brightness is null on screens that don't report it. */
@@ -105,9 +114,22 @@ export interface HudState {
   volume: { level: number; muted: boolean } | null;
   brightness: number | null;
   battery: { present: boolean; percent: number; charging: boolean } | null;
+  /** The sound output in use, e.g. "Headphones (AirPods Pro)". */
+  output: { id: string; name: string } | null;
+  /** Do Not Disturb / Focus: 0 off, 1 priority only, 2 alarms only. */
+  focus: number | null;
 }
 /** Something the notch should flash: a level that just changed, the charger going in, a low battery. */
-export type HudFlash = "volume" | "brightness" | "charging" | "low-battery";
+export type HudFlash = "volume" | "brightness" | "charging" | "low-battery" | "output" | "focus";
+
+/** Spotlight-style results from the island's search. */
+export interface SearchResults {
+  apps: { name: string; id: string; icon: string | null }[];
+  windows: OpenApp[];
+  files: { path: string; name: string; folder: boolean; icon: string | null }[];
+}
+export type LaunchTarget = { kind: "app"; id: string } | { kind: "file"; path: string } | { kind: "web"; query: string } | { kind: "copy"; text: string };
+export interface AskEvent { id: number; text?: string; done?: boolean; error?: string }
 export type HudCommand = { kind: "volume"; level: number } | { kind: "mute"; muted: boolean } | { kind: "brightness"; level: number };
 
 /** A file dropped on the notch, kept on its shelf until removed. */

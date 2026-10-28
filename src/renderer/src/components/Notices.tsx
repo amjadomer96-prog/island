@@ -1,6 +1,15 @@
 import type { Notice } from "../../../shared/types";
 import { ago } from "../lib";
-import { AppIcon, Close } from "./icons";
+import { AppIcon, Close, Phone, Share } from "./icons";
+
+// Calls (Phone Link) and Nearby Share are the Windows counterparts of the Mac island's calls and
+// AirDrop. Windows doesn't let other apps answer or accept them, so they open their own app.
+const kindOf = (n: Notice) => {
+  const text = `${n.app} ${n.title ?? ""} ${n.body ?? ""}`;
+  if (/phone link|your phone/i.test(n.app) && /call/i.test(text)) return "call";
+  if (/nearby shar/i.test(text)) return "share";
+  return null;
+};
 
 const api = window.island;
 
@@ -12,10 +21,13 @@ export const openNotice = (n: Notice) => {
 
 /** One notification: app icon, app and time, title and message. */
 export function NoticeCard({ n, onClose }: { n: Notice; onClose?: () => void }) {
+  const kind = kindOf(n);
   return (
-    <div className="notice">
+    <div className={`notice${kind ? ` notice--${kind}` : ""}`}>
       <button type="button" className="notice__open" onClick={() => openNotice(n)}>
-        {n.icon ? <img className="notice__icon" src={n.icon} alt="" /> : <span className="notice__icon notice__icon--empty"><AppIcon /></span>}
+        {kind === "call" ? <span className="notice__icon notice__badge notice__badge--call"><Phone size={18} /></span>
+          : kind === "share" ? <span className="notice__icon notice__badge notice__badge--share"><Share size={18} /></span>
+          : n.icon ? <img className="notice__icon" src={n.icon} alt="" /> : <span className="notice__icon notice__icon--empty"><AppIcon /></span>}
         <span className="notice__text">
           <span className="notice__meta">{n.app}<span> · {ago(n.at)}</span></span>
           {n.title && <span className="notice__title">{n.title}</span>}

@@ -10,6 +10,7 @@
   --done: #30d158;
   --error: #ff453a;
   --timer: #ff9f0a;
+  --focus: #8e8cf8; /* Do Not Disturb, the system indigo */
   --accent: #fff; /* replaced at runtime by the album's own colour */
   /* Segoe UI Variable has optical cuts, like Apple's SF: Text for body, Display for large titles,
      Small for tiny labels (see the Typography block at the end). */
@@ -294,3 +295,29 @@ body.settings-body, body.settings-body #root { background: #111113; overflow: au
 .la-claude__status--waiting { color: var(--waiting); }
 .la-claude__status--error { color: var(--error); }
 .la-claude__status--done { color: var(--done); }
+
+/* ---------- Search (Spotlight in the island) ---------- */
+.search { padding: 10px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+.search__field { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 10px 0 12px; color: var(--text-2); }
+.search__field input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: var(--text);
+  font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; font-size: 20px; letter-spacing: -0.01em; }
+.search__field input::placeholder { color: var(--text-3); }
+.search__back { height: 26px; padding: 0 10px; border-radius: 13px; background: var(--raised); font-size: 12px; color: var(--text-2); }
+.results { max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding-top: 6px; border-top: 1px solid var(--line); scrollbar-width: none; }
+.result { display: flex; align-items: center; gap: 12px; padding: 7px 10px; border-radius: 10px; text-align: left; transition: background-color 0.12s; }
+.result--on { background: rgba(255, 255, 255, 0.1); }
+.result__icon { width: 30px; height: 30px; flex: none; display: grid; place-items: center; color: var(--text-2); }
+.result__icon img { width: 28px; height: 28px; object-fit: contain; }
+.result__calc { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; background: #ff9f0a; color: #000; font-weight: 700; font-size: 16px; }
+.result__text { min-width: 0; display: flex; flex-direction: column; }
+.result__title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.result__sub { font-family: "Segoe UI Variable Small", "Segoe UI", system-ui, sans-serif; font-size: 11px; letter-spacing: 0.01em; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.answer { border-top: 1px solid var(--line); padding: 12px 12px 6px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.answer__who { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--claude); }
+.answer__text { max-height: 300px; overflow-y: auto; font-size: 14px; line-height: 1.55; color: var(--text); white-space: pre-wrap; user-select: text; scrollbar-width: thin; }
+.answer__error { font-size: 13px; color: var(--error); line-height: 1.5; }
+
+/* ---------- Calls and Nearby Share (the Mac's calls and AirDrop) ---------- */
+.notice__badge { border-radius: 50%; color: #fff; }
+.notice__badge--call { background: var(--done); }
+.notice__badge--share { background: #0a84ff; }

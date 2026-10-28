@@ -6,7 +6,7 @@ import { runHelper } from "./helper";
 const LOW = [20, 10];
 
 export function startHud(handlers: { onChange: (s: HudState) => void; onFlash: (f: HudFlash) => void }) {
-  let state: HudState = { volume: null, brightness: null, battery: null };
+  let state: HudState = { volume: null, brightness: null, battery: null, output: null, focus: null };
 
   const helper = runHelper("hud.ps1", [], (msg) => {
     if (msg.type === "volume") {
@@ -19,6 +19,16 @@ export function startHud(handlers: { onChange: (s: HudState) => void; onFlash: (
       const changed = state.brightness !== null && state.brightness !== next;
       state = { ...state, brightness: next };
       if (changed) handlers.onFlash("brightness");
+    } else if (msg.type === "output") {
+      const next = { id: String(msg.id), name: String(msg.name ?? "") };
+      const changed = state.output && state.output.id !== next.id;
+      state = { ...state, output: next };
+      if (changed) handlers.onFlash("output"); // headphones connected, or sound moved to another device
+    } else if (msg.type === "focus") {
+      const next = Number(msg.profile);
+      const changed = state.focus !== null && (state.focus === 0) !== (next === 0);
+      state = { ...state, focus: next };
+      if (changed) handlers.onFlash("focus");
     } else if (msg.type === "battery") {
       const next = { present: !!msg.present, percent: Number(msg.percent) || 0, charging: !!msg.charging };
       const prev = state.battery;

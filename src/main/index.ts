@@ -1,11 +1,15 @@
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, screen, Tray } from "electron";
-import type { CalendarEvent, ClaudeState, HudCommand, HudState, MediaCommand, MediaState, Settings, ShelfFile, SystemCommand, SystemState } from "../shared/types";
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, nativeImage, screen, shell, Tray } from "electron";
+import type { CalendarEvent, ClaudeState, HudCommand, HudState, LaunchTarget, MediaCommand, MediaState, Settings, ShelfFile, SystemCommand, SystemState } from "../shared/types";
+import { startAsk } from "./ask";
 import { startCalendar } from "./calendar";
 import { connectClaude, startClaude } from "./claude";
 import { startHud } from "./hud";
 import { startMedia } from "./media";
 import { getSettings, loadSettings, saveSettings } from "./settings";
+import { startSearch } from "./search";
 import { startShelf } from "./shelf";
 import { startSystem } from "./system";
 
@@ -26,12 +30,15 @@ let system: ReturnType<typeof startSystem> | null = null;
 let hud: ReturnType<typeof startHud> | null = null;
 let shelf: ReturnType<typeof startShelf> | null = null;
 let calendar: ReturnType<typeof startCalendar> | null = null;
+let search: ReturnType<typeof startSearch> | null = null;
+let ask: ReturnType<typeof startAsk> | null = null;
 let lastMedia: MediaState | null = null;
 let lastClaude: ClaudeState | null = null;
 let lastSystem: SystemState | null = null;
-let lastHud: HudState = { volume: null, brightness: null, battery: null };
+let lastHud: HudState = { volume: null, brightness: null, battery: null, output: null, focus: null };
 let lastShelf: ShelfFile[] = [];
 let lastCalendar: CalendarEvent[] = [];
+let shortcut: string | null = null;
 
 const send = (channel: string, value: unknown) => {
   win?.webContents.send(channel, value);
@@ -160,12 +167,20 @@ app.whenReady().then(() => {
   hud = startHud({
     onChange: (s) => { lastHud = s; send("hud", s); },
     onFlash: (f) => {
-      const allowed = f === "volume" || f === "brightness" ? on("hud") : on("battery");
+      const allowed = f === "charging" || f === "low-battery" ? on("battery") : on("hud");
       if (allowed) send("flash", f);
     },
   });
   shelf = startShelf((files) => { lastShelf = files; send("shelf", files); });
   calendar = startCalendar(() => getSettings().calendarUrl, (events) => { lastCalendar = events; send("calendar", events); });
+  search = startSearch(() => lastSystem?.apps ?? []);
+  ask = startAsk((event) => send("ask", event));
+
+  // Alt+Space opens search in the island, like Spotlight's Cmd+Space. Other apps (ChatGPT,
+  // PowerToys Run) often hold it, so fall back to Ctrl+Alt+Space, then Alt+Shift+Space.
+  const openSearch = () => win?.webContents.send("search-open");
+  shortcut = ["Alt+Space", "Control+Alt+Space", "Alt+Shift+Space"].find((key) => globalShortcut.register(key, openSearch)) ?? null;
+  if (!shortcut) console.error("[island] Alt+Space, Ctrl+Alt+Space and Alt+Shift+Space are all taken; open search from the island instead");
 
   tray = new Tray(appIcon(32));
   tray.setToolTip("Island");
@@ -189,6 +204,23 @@ app.whenReady().then(() => {
   ipcMain.on("shelf-open", (_e, path: string) => shelf?.open(path));
   ipcMain.on("shelf-drag", (e, path: string) => shelf?.drag(path, e.sender));
   ipcMain.on("open-settings", openSettings);
+  // Search needs the keyboard while it is open; closing gives it back to the app you were in.
+  ipcMain.on("search-focus", (_e, on: boolean) => {
+    if (!win) return;
+    win.setFocusable(!!on);
+    if (on) { win.setIgnoreMouseEvents(false); win.focus(); }
+    else win.blur();
+  });
+  ipcMain.handle("search", (_e, q: string) => (typeof q === "string" ? search?.search(q.slice(0, 200)) : null));
+  ipcMain.on("launch", (_e, t: LaunchTarget) => {
+    // Start menu apps open through Explorer's app list, which handles Store and classic apps alike.
+    if (t?.kind === "app" && typeof t.id === "string" && !/["\r\n]/.test(t.id)) spawn("explorer.exe", [`shell:AppsFolder\\${t.id}`], { detached: true, stdio: "ignore" }).unref();
+    else if (t?.kind === "file" && typeof t.path === "string" && existsSync(t.path)) shell.openPath(t.path);
+    else if (t?.kind === "web" && typeof t.query === "string") shell.openExternal(`https://www.google.com/search?q=${encodeURIComponent(t.query)}`);
+    else if (t?.kind === "copy" && typeof t.text === "string") clipboard.writeText(t.text);
+  });
+  ipcMain.on("ask", (_e, id: number, q: string) => { if (Number.isSafeInteger(id) && typeof q === "string" && q.trim()) ask?.ask(id, q.slice(0, 4000)); });
+  ipcMain.on("ask-cancel", () => ask?.cancel());
   ipcMain.handle("save-settings", (_e, patch: Partial<Settings>) => {
     const before = getSettings().calendarUrl;
     const s = saveSettings(patch ?? {});
@@ -199,9 +231,9 @@ app.whenReady().then(() => {
   ipcMain.handle("connect-claude", () => { const r = connectClaude(); claude?.refresh(); return r; });
   ipcMain.on("quit", () => app.quit());
   // The UI asks once it is listening; state that never changes (a paused song) would otherwise never arrive.
-  ipcMain.handle("state", () => ({ media: lastMedia, claude: lastClaude, system: lastSystem, hud: lastHud, shelf: lastShelf, calendar: lastCalendar, settings: getSettings() }));
+  ipcMain.handle("state", () => ({ media: lastMedia, claude: lastClaude, system: lastSystem, hud: lastHud, shelf: lastShelf, calendar: lastCalendar, settings: getSettings(), shortcut }));
 });
 
 app.on("second-instance", openSettings);
-app.on("before-quit", () => { media?.stop(); claude?.stop(); system?.stop(); hud?.stop(); calendar?.stop(); });
+app.on("before-quit", () => { globalShortcut.unregisterAll(); media?.stop(); claude?.stop(); system?.stop(); hud?.stop(); calendar?.stop(); search?.stop(); ask?.cancel(); });
 app.on("window-all-closed", () => app.quit());
