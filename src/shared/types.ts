@@ -161,4 +161,6 @@ export interface Settings {
   timerSound: boolean;
   /** A short sound when a notification drops down. */
   noticeSound: boolean;
+  /** How big the notch is: a zoom factor for the whole island, 1 being the standard size. */
+  notchSize: number;
 }

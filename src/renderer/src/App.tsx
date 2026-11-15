@@ -36,7 +36,7 @@ function deviceName(name: string) {
 }
 const isHeadphones = (name: string) => /airpods|buds|headphone|headset|earbud|hands-free|bluetooth|\bwh-|\bwf-|beats/i.test(name);
 
-const DEFAULT_SETTINGS: Settings = { notifications: true, openedApps: true, hud: true, battery: true, launchAtLogin: false, calendarUrl: "", timerSound: true, noticeSound: true };
+const DEFAULT_SETTINGS: Settings = { notifications: true, openedApps: true, hud: true, battery: true, launchAtLogin: false, calendarUrl: "", timerSound: true, noticeSound: true, notchSize: 1 };
 
 type Activity = "music" | "timer" | "claude";
 

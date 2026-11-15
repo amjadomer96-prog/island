@@ -1,9 +1,9 @@
 {
   "name": "island",
   "productName": "Island",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "An Apple-style Dynamic Island for Windows: music, Claude Code and more at the top of your screen.",
-  "author": "Legit Design Studio",
+  "author": "Shameer Waqar",
   "private": true,
   "main": "out/main/index.js",
   "scripts": {

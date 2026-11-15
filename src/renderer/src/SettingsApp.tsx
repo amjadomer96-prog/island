@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { ClaudeState, Settings } from "../../shared/types";
 
 const api = window.island;
@@ -35,7 +35,12 @@ export function SettingsApp() {
   return (
     <main className="settings">
       <h1>Island</h1>
-      <p className="settings__lead">Everything the notch shows, and what it connects to.</p>
+      <p className="settings__lead">How big the notch is, what it shows, and what it connects to.</p>
+
+      <section>
+        <h2>Notch</h2>
+        <NotchSize initial={settings.notchSize} onChange={(notchSize) => save({ notchSize })} />
+      </section>
 
       <section>
         <h2>Show in the notch</h2>
@@ -71,9 +76,43 @@ export function SettingsApp() {
       </section>
 
       <footer className="settings__foot">
-        <span>Island 0.1 · Legit Design Studio</span>
+        <span>Island 0.2 · Shameer Waqar</span>
         <button type="button" className="link" onClick={() => api.quit()}>Quit Island</button>
       </footer>
     </main>
+  );
+}
+
+// Matches the range in src/main/settings.ts.
+const SIZE = { min: 0.8, max: 1.4, step: 0.05 };
+
+/** A size slider, like the Dock's: the notch follows it live as it moves. */
+function NotchSize({ initial, onChange }: { initial: number; onChange: (size: number) => void }) {
+  // The slider keeps its own value, so saves landing a moment later never pull the thumb back mid-drag.
+  const [size, setSize] = useState(initial);
+  const fill = ((size - SIZE.min) / (SIZE.max - SIZE.min)) * 100;
+  return (
+    <div className="row sizer">
+      <span className="sizer__head">
+        <span className="row__text"><strong>Size</strong><span>Makes the notch, and everything that opens from it, larger or smaller.</span></span>
+        <span className="sizer__value">{Math.round(size * 100)}%</span>
+      </span>
+      <span className="sizer__track">
+        <span className="sizer__pill" style={{ width: 12, height: 5 }} aria-hidden />
+        <input
+          type="range"
+          className="range"
+          aria-label="Notch size"
+          aria-valuetext={`${Math.round(size * 100)}%`}
+          min={SIZE.min}
+          max={SIZE.max}
+          step={SIZE.step}
+          value={size}
+          style={{ "--fill": `${fill}%` } as CSSProperties}
+          onChange={(e) => { const next = Number(e.target.value); setSize(next); onChange(next); }}
+        />
+        <span className="sizer__pill" style={{ width: 22, height: 9 }} aria-hidden />
+      </span>
+    </div>
   );
 }

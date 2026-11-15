@@ -13,9 +13,10 @@ import { startSearch } from "./search";
 import { startShelf } from "./shelf";
 import { startSystem } from "./system";
 
-// The window is a fixed transparent canvas big enough for the open notch; the notch itself is
-// drawn by the UI. The window only catches the pointer over the notch; everywhere else, clicks
-// (and dragged files) go through to whatever is below.
+// The window is a transparent canvas big enough for the open notch; the notch itself is drawn by
+// the UI. The window only catches the pointer over the notch; everywhere else, clicks (and
+// dragged files) go through to whatever is below. The notch size setting zooms the page, and the
+// window grows with it, so the page always lays out at this size.
 const WIDTH = 640;
 const HEIGHT = 560;
 
@@ -59,7 +60,11 @@ function load(w: BrowserWindow, hash = "") {
 function place() {
   if (!win) return;
   const { workArea } = screen.getPrimaryDisplay();
-  win.setBounds({ x: Math.round(workArea.x + (workArea.width - WIDTH) / 2), y: workArea.y, width: WIDTH, height: HEIGHT });
+  const size = getSettings().notchSize;
+  const width = Math.round(WIDTH * size);
+  const height = Math.min(Math.round(HEIGHT * size), workArea.height);
+  win.setBounds({ x: Math.round(workArea.x + (workArea.width - width) / 2), y: workArea.y, width, height });
+  win.webContents.setZoomFactor(size);
 }
 
 function createWindow() {
@@ -77,11 +82,13 @@ function createWindow() {
     focusable: false, // never steals focus from the app you're working in
     show: false,
     backgroundColor: "#00000000",
-    webPreferences: { preload: join(__dirname, "../preload/index.js") },
+    // Its own zoom, so the notch size never zooms the settings window (same page, same origin).
+    webPreferences: { preload: join(__dirname, "../preload/index.js"), zoomMode: "isolated" },
   });
   win.setAlwaysOnTop(true, "screen-saver");
   win.setIgnoreMouseEvents(true, { forward: true });
   place();
+  win.webContents.on("did-finish-load", place);
   win.once("ready-to-show", () => win?.showInactive());
   // UI errors land in the app log, so a blank notch can be diagnosed.
   win.webContents.on("console-message", (e) => { if (e.level === "error") console.error("[ui]", e.message); });
@@ -118,7 +125,10 @@ function watchPointer() {
     const b = win.getBounds();
     const pad = 4;
     if (Date.now() < holdUntil) return;
-    const inside = p.x >= b.x + notch.x - pad && p.x <= b.x + notch.x + notch.width + pad && p.y >= b.y + notch.y - pad && p.y <= b.y + notch.y + notch.height + pad;
+    // The UI measures the notch in page pixels, which the notch size zooms.
+    const z = getSettings().notchSize;
+    const x = b.x + notch.x * z, y = b.y + notch.y * z;
+    const inside = p.x >= x - pad && p.x <= x + notch.width * z + pad && p.y >= y - pad && p.y <= y + notch.height * z + pad;
     if (inside !== catching) {
       catching = inside;
       // Catching the pointer also makes the notch a drop target for files dragged from anywhere.
@@ -128,6 +138,13 @@ function watchPointer() {
       win.webContents.send("pointer", inside);
     }
   }, 50);
+}
+
+// Windows sometimes leaves app windows (VS Code, Chrome, WhatsApp) stacked above the island while
+// it is still marked always-on-top, hiding the notch whenever an app is open. Saying it again each
+// second puts the notch back in front; it never takes focus.
+function keepOnTop() {
+  setInterval(() => win?.setAlwaysOnTop(true, "screen-saver"), 1000);
 }
 
 /** A white pill on black: placeholder mark until the product has its own logo. */
@@ -154,6 +171,7 @@ app.whenReady().then(() => {
   loadSettings();
   createWindow();
   watchPointer();
+  keepOnTop();
   screen.on("display-metrics-changed", place);
   screen.on("display-added", place);
   screen.on("display-removed", place);
@@ -224,10 +242,11 @@ app.whenReady().then(() => {
   ipcMain.on("ask", (_e, id: number, q: string) => { if (Number.isSafeInteger(id) && typeof q === "string" && q.trim()) ask?.ask(id, q.slice(0, 4000)); });
   ipcMain.on("ask-cancel", () => ask?.cancel());
   ipcMain.handle("save-settings", (_e, patch: Partial<Settings>) => {
-    const before = getSettings().calendarUrl;
+    const before = getSettings();
     const s = saveSettings(patch ?? {});
     send("settings", s);
-    if (s.calendarUrl !== before) calendar?.refresh();
+    if (s.calendarUrl !== before.calendarUrl) calendar?.refresh();
+    if (s.notchSize !== before.notchSize) place();
     return s;
   });
   ipcMain.handle("connect-claude", () => { const r = connectClaude(); claude?.refresh(); return r; });

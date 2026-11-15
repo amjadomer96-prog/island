@@ -229,6 +229,16 @@ body.settings-body, body.settings-body #root { background: #111113; overflow: au
 .field { display: flex; gap: 8px; }
 .field input { flex: 1; min-width: 0; height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--raised); color: var(--text); font: inherit; font-size: 13px; }
 .field .pill-btn { height: 36px; margin-left: 0; padding: 0 16px; }
+/* Notch size: a Dock-style slider between a small and a large pill. */
+.sizer { flex-direction: column; align-items: stretch; gap: 12px; }
+.sizer__head { display: flex; align-items: flex-start; gap: 14px; }
+.sizer__value { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.sizer__track { display: flex; align-items: center; gap: 12px; }
+.sizer__pill { flex: none; border-radius: 99px; background: var(--text-3); }
+.range { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 4px; border-radius: 2px; background: linear-gradient(to right, #0a84ff var(--fill), #3a3a3c var(--fill)); cursor: pointer; }
+.range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); transition: scale 0.15s; }
+.range:active::-webkit-slider-thumb { scale: 1.1; }
+.range:focus-visible { outline: 2px solid #0a84ff; outline-offset: 8px; }
 .settings__foot { margin-top: 28px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-3); }
 .link { color: var(--error); font-size: 13px; }
 

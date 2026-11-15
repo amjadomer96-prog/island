@@ -1,6 +1,6 @@
 # Island
 
-An Apple-style Dynamic Island for Windows, by Legit Design Studio. A black pill at the top of the screen that springs open on hover.
+An Apple-style Dynamic Island for Windows, by Shameer Waqar. A black pill at the top of the screen that springs open on hover.
 
 ## What it does
 
@@ -20,13 +20,13 @@ A black notch that grows out of the top edge of the screen, like the Mac's, and 
 - **Focus**: Do Not Disturb on or off shows in the notch.
 - **Calls and Nearby Share** notifications (Phone Link, Windows sharing) get their own badges, like calls and AirDrop on a Mac.
 - **Claude Code**: each session as working (with its tool), needs you, done or stopped; pops open when one needs you or finishes.
-- **Settings window** (tray icon, or the gear in the notch): every feature on or off, open at login, calendar link, Connect Claude Code.
+- **Settings window** (tray icon, or the gear in the notch): notch size (80% to 140%, the notch follows the slider live), every feature on or off, open at login, calendar link, Connect Claude Code.
 
 Connect Claude Code adds Island's hooks to `~/.claude/settings.json` next to any hooks already there, after saving a backup to `settings.json.island-backup`.
 
 ## Install
 
-1. Open [Releases](https://github.com/amjadomer96-prog/island/releases/latest) and download **Island-Setup-0.1.0.exe**.
+1. Open [Releases](https://github.com/amjadomer96-prog/island/releases/latest) and download **Island-Setup-0.2.0.exe**.
 2. Run it. The installer isn't signed yet, so Windows may say "Windows protected your PC": click **More info**, then **Run anyway**.
 3. Island appears at the top of the screen and in the system tray. Right-click the tray icon for Settings.
 
